@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+#/ Usage: script/try host[:port] password
+
+require "socket"
+
+def main(password:, host:, port: 9002)
+  sig = SignalCatcher.new
+  sig.trap_all :QUIT, :INT, :TERM
+  sock = TCPSocket.new host, port
+  protocol = Pro5StageMonitor.new socket: sock
+  protocol.login password: password
+  while sig.running?
+    readers, _ = IO.select [sig.reader, sock]
+    readers.each do |reader|
+      if reader == sock
+        message = protocol.receive
+      end
+    end
+  end
+  puts ""
+end
+
+# -> <StageDisplayLogin>#{password}</StageDisplayLogin>
+# <- <StageDisplayLoginSuccess />
+# <- <DisplayLayouts selected="Default"><DisplayLayout showBorder="1E0" width="1680" identifier="Default" height="1050"><Frame height="105.000000" width="336.000000" xAxis="84.000000" isVisible="YES" identifier="Clock" yAxis="0.000000"></Frame><Frame height="105.000000" width="336.000000" xAxis="1260.000000" isVisible="YES" identifier="ElapsedTime" yAxis="0.000000"></Frame><Frame height="105.000000" width="336.000000" xAxis="84.000000" isVisible="YES" identifier="Timer1" yAxis="787.500000"></Frame><Frame height="105.000000" width="336.000000" xAxis="672.000000" isVisible="YES" identifier="Timer2" yAxis="787.500000"></Frame><Frame height="105.000000" width="336.000000" xAxis="1260.000000" isVisible="YES" identifier="Timer3" yAxis="787.500000"></Frame><Frame height="105.000000" width="336.000000" xAxis="672.000000" isVisible="YES" identifier="VideoCounter" yAxis="0.000000"></Frame><Frame height="420.000000" width="336.000000" xAxis="1302.000000" isVisible="YES" identifier="ChordChart" yAxis="236.250000"></Frame><Frame height="525.000000" width="672.000000" xAxis="42.000000" isVisible="YES" identifier="CurrentSlide" yAxis="131.250000" fontSize="60"></Frame><Frame height="420.000000" width="504.000031" xAxis="756.000000" isVisible="YES" identifier="NextSlide" yAxis="183.750000" fontSize="60"></Frame><Frame height="105.000000" width="672.000000" xAxis="42.000000" isVisible="YES" identifier="CurrentSlideNotes" yAxis="656.250000" fontSize="60"></Frame><Frame height="105.000000" width="504.000031" xAxis="756.000000" isVisible="YES" identifier="NextSlideNotes" yAxis="603.750000" fontSize="60"></Frame><Frame height="105.000000" width="1512.000000" xAxis="84.000000" isVisible="YES" identifier="Message" yAxis="918.750000" fontSize="60" flashColor="0.000000 1.000000 0.000000"></Frame></DisplayLayout></DisplayLayouts>
+# <- <?xml version="1.0" encoding="UTF-8" standalone="no"?><StageDisplayData><Fields><Field type="clock" clockFormat="1" label="Clock" identifier="Clock" alpha="1E0" red="1E0" green="1E0" blue="1E0">6:06:03 PM</Field><Field running="0" type="elapsed" label="Time Elapsed" identifier="ElapsedTime" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 1" identifier="Timer1" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 2" identifier="Timer2" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 3" identifier="Timer3" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field type="slide" label="Current Slide" identifier="CurrentSlide" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="slide" label="Next Slide" identifier="NextSlide" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="slide" label="Current Slide Notes" identifier="CurrentSlideNotes" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="slide" label="Next Slide Notes" identifier="NextSlideNotes" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="message" label="Message" identifier="Message" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field running="0" type="countdown" label="Video Countdown" identifier="VideoCounter" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field type="chordChart" label="Chord Chart" identifier="ChordChart"></Field></Fields></StageDisplayData>
+# <- <?xml version="1.0" encoding="UTF-8" standalone="no"?><StageDisplayData><Fields><Field type="clock" clockFormat="1" label="Clock" identifier="Clock" alpha="1E0" red="1E0" green="1E0" blue="1E0">6:06:10 PM</Field><Field running="0" type="elapsed" label="Time Elapsed" identifier="ElapsedTime" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 1" identifier="Timer1" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 2" identifier="Timer2" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field running="0" type="countdown" overrun="0" label="Countdown 3" identifier="Timer3" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field type="slide" label="Current Slide" identifier="CurrentSlide" alpha="1E0" red="1E0" green="1E0" blue="1E0">Great is Your faithfulness Oh, God
+# You wrestle with the sinner's heart</Field><Field type="slide" label="Next Slide" identifier="NextSlide" alpha="1E0" red="1E0" green="1E0" blue="1E0">You lead us by still waters into mercy
+# And nothing can keep us apart.</Field><Field type="slide" label="Current Slide Notes" identifier="CurrentSlideNotes" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="slide" label="Next Slide Notes" identifier="NextSlideNotes" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field type="message" label="Message" identifier="Message" alpha="1E0" red="1E0" green="1E0" blue="1E0"></Field><Field running="0" type="countdown" label="Video Countdown" identifier="VideoCounter" alpha="1E0" red="1E0" green="1E0" blue="1E0">--:--:--</Field><Field type="chordChart" label="Chord Chart" identifier="ChordChart"></Field></Fields></StageDisplayData>
+class Pro5StageMonitor
+  def initialize(socket:, debug: $stderr)
+    @socket = socket
+    @debug = debug
+  end
+
+  attr_reader :socket, :debug
+
+  def login(password:)
+    say "<StageDisplayLogin>#{password}</StageDisplayLogin>\r\n"
+  end
+
+  def receive
+    message = socket.read_nonblock(100000) # -> EOFError on bad pass or Pro5 exit
+    log_message :in, message
+    message
+  end
+
+  private
+
+  def say(message)
+    log_message :out, message
+    socket.write message
+  end
+
+  def log_message(direction, message)
+    tag = direction == :in ? "<-" : "->"
+    debug.write "#{socket.inspect} #{tag} #{message.inspect}\n"
+  end
+end
+
+class SignalCatcher
+  def trap_all(*signals)
+    signals.each do |signal|
+      Signal.trap(signal) { stop! }
+    end
+  end
+
+  def running?
+    ! @stopped
+  end
+
+  def reader
+    pipes.first
+  end
+
+  private
+
+  def stop!
+    @stopped = true
+    writer.write "."
+  end
+
+  def writer
+    pipes.last
+  end
+
+  def pipes
+    @pipes ||= IO.pipe
+  end
+end
+
+def parse_options
+  if ARGV.size != 2
+    system "grep ^#/ #{__FILE__} | cut -c4-"
+    exit 1
+  end
+
+  options = {}
+  host,port = ARGV[0].split(":", 2)
+  options[:host] = host
+  options[:port] = port.to_i if port
+  options[:password] = ARGV[1]
+  options
+end
+
+main(parse_options)
+
