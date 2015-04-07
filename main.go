@@ -3,7 +3,9 @@ package main
 import (
   "flag"
   "fmt"
+  "log"
   "net"
+  "net/http"
   "time"
   "encoding/xml"
 )
@@ -27,23 +29,30 @@ func main() {
   fmt.Printf("listen on %d\n", *listenPort)
 
   var pro5, err = ConnectToPro5(connectInfo)
-  var httpServer, err = StartServer(*listenPort, pro5)
+  if err != nil {
+    log.Fatal("ConnectToPro5: ", err)
+  }
+  StartServer(*listenPort, pro5)
 }
 
 //////////////////////////////
 //
-func StartServer(port int, pro5 Pro5Connection) {
-  httpServer.Start(staticPages)
-  httpServer.ListenForWebSocket(func(conn WebSocket) {
-    pro5.SendUpdates(conn)
-  })
+func StartServer(port int, pro5 *Pro5Connection) {
+  var mux = http.NewServeMux()
+  //mux.Handle("/connect", websocket)
+  mux.Handle("/", http.FileServer(http.Dir("public/")))
+  http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+//  httpServer.Start(staticPages)
+//  httpServer.ListenForWebSocket(func(conn WebSocket) {
+//    pro5.SendUpdates(conn)
+//  })
 }
-func (c *Pro5Connection) SendUpdates(conn WebSocket) {
-  conn <- c.DisplayLayouts
-  conn <- c.InitialSlide
-  c.OnSlide(func(newSlide interface{}) {
-    conn <- newSlide
-  })
+func (c *Pro5Connection) SendUpdates(webSocket interface{}) {
+//  conn <- c.DisplayLayouts
+//  conn <- c.InitialSlide
+//  c.OnSlide(func(newSlide interface{}) {
+//    conn <- newSlide
+//  })
 }
 //
 //////////////////////////////
