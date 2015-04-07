@@ -1,6 +1,7 @@
 package main
 
 import (
+  "bytes"
   "container/list"
   "encoding/xml"
   "flag"
@@ -45,20 +46,12 @@ func StartServer(port int, pro5 *Pro5Connection) {
   http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 }
 
-func (c *Pro5Connection) SendUpdates(webSocket interface{}) {
-//  conn <- c.DisplayLayouts
-//  conn <- c.InitialSlide
-//  c.OnSlide(func(newSlide interface{}) {
-//    conn <- newSlide
-//  })
-}
-//
-//////////////////////////////
-
 type Pro5Connection struct {
   Info Pro5ConnectInfo
   Connection net.Conn
   Listeners list.List
+  DisplayLayouts string
+  LastSlide string
 }
 
 func ConnectToPro5(info Pro5ConnectInfo) (*Pro5Connection, error) {
@@ -83,9 +76,18 @@ func (c *Pro5Connection) Run() {
   go c.ReadEverything()
 }
 
+type DisplayLayout struct {
+  // todo
+}
+
+type StageDisplayData struct {
+  // todo
+}
+
 func (c *Pro5Connection) ReadEverything() {
   var xmlReader = xml.NewDecoder(c.Connection)
 
+  // http://blog.davidsingleton.org/parsing-huge-xml-files-with-go/
   for {
     var token, err = xmlReader.Token()
     if err != nil {
@@ -93,14 +95,58 @@ func (c *Pro5Connection) ReadEverything() {
     }
     switch se := token.(type) {
     case xml.StartElement:
-      fmt.Println(se.Name.Local)
-    default:
-      fmt.Printf("%T\n", token)
+      switch se.Name.Local {
+      case "DisplayLayouts":
+        c.DisplayLayouts, err = readXmlString(xmlReader, DisplayLayout{}, &se)
+        sendToListeners(c, c.DisplayLayouts)
+      case "StageDisplayData":
+        c.LastSlide, err = readXmlString(xmlReader, StageDisplayData{}, &se)
+        sendToListeners(c, c.LastSlide)
+      }
     }
   }
 }
 
+func readXmlString(xmlReader *xml.Decoder, v interface{}, startElement *xml.StartElement) (string, error) {
+  var err = xmlReader.DecodeElement(v, startElement)
+  if err != nil {
+    return "", err
+  }
+  var buffer = new(bytes.Buffer)
+  var xmlWriter = xml.NewEncoder(buffer)
+  err = xmlWriter.Encode(v)
+  if err != nil {
+    return "", err
+  }
+  return buffer.String(), nil
+}
+
 func (c *Pro5Connection) AddListener(listener io.Writer) {
   c.Listeners.PushBack(listener)
-  fmt.Fprintf(listener, "Hello!")
+  sendToListener(c, listener, c.DisplayLayouts)
+  sendToListener(c, listener, c.LastSlide)
+}
+
+func sendToListeners(c *Pro5Connection, payload string) (err error) {
+  for e := c.Listeners.Front(); e != nil; e = e.Next() {
+    listener, ok := e.Value.(io.Writer)
+    if ok {
+      err = sendToListener(c, listener, payload)
+      if err != nil {
+        return
+      }
+    }
+  }
+  return
+}
+
+func sendToListener(c *Pro5Connection, listener io.Writer, payload string) error {
+  fmt.Printf("%T %s\n", listener, payload)
+  if len(payload) > 0 {
+    _, err := fmt.Fprintf(listener, "%s", payload)
+    if err != nil {
+      return err
+    }
+  }
+  return nil
 }
