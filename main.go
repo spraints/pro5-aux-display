@@ -26,9 +26,27 @@ func main() {
 
   fmt.Printf("listen on %d\n", *listenPort)
 
-  ConnectToPro5(connectInfo)
-  time.Sleep(3 * time.Second)
+  var pro5, err = ConnectToPro5(connectInfo)
+  var httpServer, err = StartServer(*listenPort, pro5)
 }
+
+//////////////////////////////
+//
+func StartServer(port int, pro5 Pro5Connection) {
+  httpServer.Start(staticPages)
+  httpServer.ListenForWebSocket(func(conn WebSocket) {
+    pro5.SendUpdates(conn)
+  })
+}
+func (c *Pro5Connection) SendUpdates(conn WebSocket) {
+  conn <- c.DisplayLayouts
+  conn <- c.InitialSlide
+  c.OnSlide(func(newSlide interface{}) {
+    conn <- newSlide
+  })
+}
+//
+//////////////////////////////
 
 type Pro5Connection struct {
   Info Pro5ConnectInfo
