@@ -3,6 +3,9 @@ package main
 import (
   "flag"
   "fmt"
+  "net"
+  "time"
+  "encoding/xml"
 )
 
 type Pro5ConnectInfo struct {
@@ -27,9 +30,35 @@ func main() {
 }
 
 type Pro5Connection struct {
+  Info Pro5ConnectInfo
+  Connection net.Conn
 }
 
-func ConnectToPro5(info Pro5ConnectInfo) Pro5Connection {
-  fmt.Printf("connect to %s:%d with pw=%s\n", info.Host, info.Port, info.Password)
-  return Pro5Connection{}
+func ConnectToPro5(info Pro5ConnectInfo) (*Pro5Connection, error) {
+  var result = new(Pro5Connection)
+  var err error
+  result.Info = info
+  result.Connection, err = net.Dial("tcp", fmt.Sprintf("%s:%d", info.Host, info.Port))
+  if err != nil {
+    return nil, err
+  }
+
+  var xmlWriter = xml.NewEncoder(result.Connection)
+  var loginElement = xml.StartElement{}
+  loginElement.Name.Local = "StageDisplayLogin"
+  xmlWriter.EncodeElement(info.Password, loginElement)
+  fmt.Fprintf(result.Connection, "\r\n")
+
+  time.Sleep(1 * time.Second)
+
+  var b []byte
+  var i int
+  i, err = result.Connection.Read(b)
+  if err == nil {
+    fmt.Printf("read %d bytes\n", i)
+  } else {
+    fmt.Printf("errror: %s\n", err)
+  }
+
+  return result, nil
 }
