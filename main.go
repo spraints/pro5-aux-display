@@ -27,6 +27,7 @@ func main() {
   fmt.Printf("listen on %d\n", *listenPort)
 
   ConnectToPro5(connectInfo)
+  time.Sleep(3 * time.Second)
 }
 
 type Pro5Connection struct {
@@ -42,23 +43,26 @@ func ConnectToPro5(info Pro5ConnectInfo) (*Pro5Connection, error) {
   if err != nil {
     return nil, err
   }
+  go result.Run()
+  return result, nil
+}
 
-  var xmlWriter = xml.NewEncoder(result.Connection)
+func (c *Pro5Connection) Run() {
+  var err error
+  var xmlWriter = xml.NewEncoder(c.Connection)
   var loginElement = xml.StartElement{}
   loginElement.Name.Local = "StageDisplayLogin"
-  xmlWriter.EncodeElement(info.Password, loginElement)
-  fmt.Fprintf(result.Connection, "\r\n")
+  xmlWriter.EncodeElement(c.Info.Password, loginElement)
+  fmt.Fprintf(c.Connection, "\r\n")
 
   time.Sleep(1 * time.Second)
 
   var b []byte
   var i int
-  i, err = result.Connection.Read(b)
+  i, err = c.Connection.Read(b)
   if err == nil {
     fmt.Printf("read %d bytes\n", i)
   } else {
     fmt.Printf("errror: %s\n", err)
   }
-
-  return result, nil
 }
