@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+#/ Usage: script/mitm upstream-port mitm-port
+
+server_port, mitm_port = ARGV.map(&:to_i)
+if server_port.nil? || mitm_port.nil? || server_port < 1 || mitm_port < 1024
+  system "grep ^#/ #{__FILE__} | cut -c4-"
+  exit 1
+end
+
+tee1_in, nc_mitm_out = IO.pipe
+nc_up_in, tee1_out = IO.pipe
+tee2_in, nc_up_out = IO.pipe
+nc_mitm_in, tee2_out = IO.pipe
+sed1_in, tee1_err = IO.pipe
+sed2_in, tee2_err = IO.pipe
+
+puts "Listen on #{mitm_port}..."
+nc_mitm_pid = spawn "nc", "-l", mitm_port.to_s,
+  :out => nc_mitm_out, :in => nc_mitm_in
+
+tee1_pid = spawn "tee", "/dev/stderr",
+  :out => tee1_out, :in => tee1_in, :err => tee1_err
+
+sed1_pid = spawn "sed", "-e", "s/^/up:   /",
+  :in => sed1_in
+
+puts "Talk to localhost:#{server_port}..."
+nc_up_pid = spawn "nc", "localhost", server_port.to_s,
+  :out => nc_up_out, :in => nc_up_in
+
+tee2_pid = spawn "tee", "/dev/stderr",
+  :out => tee2_out, :in => tee2_in, :err => tee2_err
+
+sed2_pid = spawn "sed", "-e", "s/^/down: /",
+  :in => sed2_in
+
+[:INT, :CLD].each do |sig|
+  trap(sig) do
+    [nc_mitm_pid, tee1_pid, sed1_pid, nc_up_pid, tee2_pid, sed2_pid].each do |pid|
+      Process.kill :INT, pid rescue nil
+    end
+    exit 0
+  end
+end
+
+loop { sleep 100 }
+
+# nc –l –p 80 0<pipe-retorno | tee –a entrada | nc localhost 81 | tee –a saida 1>pipe-retorno - See more at: http://www.felipemartins.info/2013/03/netcat-the-it-swiss-knife-complete-commented-examples/#sthash.IHD9kEhT.dpuf
