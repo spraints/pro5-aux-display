@@ -3,11 +3,14 @@ package main
 import (
   "flag"
   "fmt"
+  "io"
   "log"
   "net"
   "net/http"
   "time"
   "encoding/xml"
+
+  "golang.org/x/net/websocket"
 )
 
 type Pro5ConnectInfo struct {
@@ -39,7 +42,7 @@ func main() {
 //
 func StartServer(port int, pro5 *Pro5Connection) {
   var mux = http.NewServeMux()
-  //mux.Handle("/connect", websocket)
+  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn){io.Copy(ws, ws)}))
   mux.Handle("/", http.FileServer(http.Dir("public/")))
   http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 //  httpServer.Start(staticPages)

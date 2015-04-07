@@ -4,6 +4,24 @@
     <title>P5</title>
   </head>
   <body>
-    Hi!
+    <div id="message"></div>
   </body>
+  <script>
+    function setMessage(message) {
+      document.getElementById('message').textContent = message;
+    }
+
+    var ws = new WebSocket("ws://" + location.host + "/connect");
+    ws.onopen = function() {
+      document.body.style.backgroundColor = '#cfc';
+      setMessage("connecting...");
+      ws.send("a test message");
+    };
+    ws.onclose = function() {
+      document.body.style.backgroundColor = null;
+    };
+    ws.onmessage = function(event) {
+      setMessage(event.data);
+    };
+  </script>
 </html>
