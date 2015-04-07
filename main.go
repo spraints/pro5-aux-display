@@ -1,14 +1,14 @@
 package main
 
 import (
+  "container/list"
+  "encoding/xml"
   "flag"
   "fmt"
   "io"
   "log"
   "net"
   "net/http"
-  "time"
-  "encoding/xml"
 
   "golang.org/x/net/websocket"
 )
@@ -38,18 +38,13 @@ func main() {
   StartServer(*listenPort, pro5)
 }
 
-//////////////////////////////
-//
 func StartServer(port int, pro5 *Pro5Connection) {
   var mux = http.NewServeMux()
-  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn){io.Copy(ws, ws)}))
+  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn) { pro5.AddListener(ws) }))
   mux.Handle("/", http.FileServer(http.Dir("public/")))
   http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
-//  httpServer.Start(staticPages)
-//  httpServer.ListenForWebSocket(func(conn WebSocket) {
-//    pro5.SendUpdates(conn)
-//  })
 }
+
 func (c *Pro5Connection) SendUpdates(webSocket interface{}) {
 //  conn <- c.DisplayLayouts
 //  conn <- c.InitialSlide
@@ -63,6 +58,7 @@ func (c *Pro5Connection) SendUpdates(webSocket interface{}) {
 type Pro5Connection struct {
   Info Pro5ConnectInfo
   Connection net.Conn
+  Listeners list.List
 }
 
 func ConnectToPro5(info Pro5ConnectInfo) (*Pro5Connection, error) {
@@ -78,21 +74,33 @@ func ConnectToPro5(info Pro5ConnectInfo) (*Pro5Connection, error) {
 }
 
 func (c *Pro5Connection) Run() {
-  var err error
   var xmlWriter = xml.NewEncoder(c.Connection)
   var loginElement = xml.StartElement{}
   loginElement.Name.Local = "StageDisplayLogin"
   xmlWriter.EncodeElement(c.Info.Password, loginElement)
   fmt.Fprintf(c.Connection, "\r\n")
 
-  time.Sleep(1 * time.Second)
+  go c.ReadEverything()
+}
 
-  var b []byte
-  var i int
-  i, err = c.Connection.Read(b)
-  if err == nil {
-    fmt.Printf("read %d bytes\n", i)
-  } else {
-    fmt.Printf("errror: %s\n", err)
+func (c *Pro5Connection) ReadEverything() {
+  var xmlReader = xml.NewDecoder(c.Connection)
+
+  for {
+    var token, err = xmlReader.Token()
+    if err != nil {
+      log.Fatal("xmlReader.Token(): ", err)
+    }
+    switch se := token.(type) {
+    case xml.StartElement:
+      fmt.Println(se.Name.Local)
+    default:
+      fmt.Printf("%T\n", token)
+    }
   }
+}
+
+func (c *Pro5Connection) AddListener(listener io.Writer) {
+  c.Listeners.PushBack(listener)
+  fmt.Fprintf(listener, "Hello!")
 }

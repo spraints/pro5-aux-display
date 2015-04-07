@@ -15,7 +15,6 @@
     ws.onopen = function() {
       document.body.style.backgroundColor = '#cfc';
       setMessage("connecting...");
-      ws.send("a test message");
     };
     ws.onclose = function() {
       document.body.style.backgroundColor = null;
