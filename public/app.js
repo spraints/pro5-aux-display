@@ -26,7 +26,6 @@ $(function() {
       console.log("unknown element type");
       setMessage("unknown message");
     }
-    window.xml = xml;
   };
 
   var handlers = {};
@@ -43,7 +42,13 @@ $(function() {
   };
   handlers.StageDisplayData = function(xml) {
     setMessage("slide");
-    $("#js-slide").text(xml.outerHTML);
+    window.s = xml;
+
+    var fields = xml.firstElementChild;
+    eachChildElement(fields, function(field) {
+      $("." + classForField(field)).text($(field).text());
+    });
+
     console.log("New slide");
     console.log(xml);
   };
@@ -102,6 +107,10 @@ $(function() {
     }
 
     return this;
+  }
+
+  function classForField(node) {
+    return "js-layout-" + node.getAttribute("identifier");
   }
 });
 // <DisplayLayouts selected="Default">
