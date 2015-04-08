@@ -89,7 +89,10 @@ $(function() {
       var label = $("<div></div>").text(identifier).css("position", "absolute").css("top", 0).css("left", 0).css("background-color", "black").css("color", "white").css("font-weight", "bold");
       var content = $("<div></div>").css("position", "absolute").css("top", 0).css("bottom", 0).css("left", 0).css("right", 0);
       content.addClass(classForField(node));
-      content.css("font-size", node.getAttribute("fontSize"));
+      var fontSize = node.getAttribute("fontSize");
+      if (fontSize) {
+        content.css("font-size", parseInt(fontSize));
+      }
       block.append(label).append(content);
       return block;
     }
