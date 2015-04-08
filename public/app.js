@@ -1,22 +1,24 @@
-function setMessage(message) {
-  document.getElementById('message').textContent = message;
-}
+$(function() {
+  function setMessage(message) {
+    $("#message").text(message);
+  }
 
-var ws = new WebSocket("ws://" + location.host + "/connect");
-ws.onopen = function() {
-  console.log("OPEN");
-  document.body.style.backgroundColor = '#cfc';
-  setMessage("connecting...");
-};
-ws.onclose = function() {
-  console.log("CLOSE");
-  document.body.style.backgroundColor = null;
-};
-ws.onmessage = function(event) {
-  console.log(event);
-  setMessage(event.data);
-};
+  var ws = new WebSocket("ws://" + location.host + "/connect");
+  ws.onopen = function() {
+    console.log("OPEN");
+    $("body").addClass("connected");
+    setMessage("connecting...");
+  };
+  ws.onclose = function() {
+    console.log("CLOSE");
+    $("body").removeClass("connected");
+  };
+  ws.onmessage = function(event) {
+    console.log(event);
+    setMessage(event.data);
+  };
 
+});
 // <DisplayLayouts selected="Default">
 //   <DisplayLayout showBorder="1E0" width="1680" identifier="Default" height="1050">
 //     <Frame height="105.000000" width="336.000000" xAxis="84.000000" isVisible="YES" identifier="Clock" yAxis="0.000000"/>
