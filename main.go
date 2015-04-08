@@ -21,6 +21,34 @@ type Pro5ConnectInfo struct {
 }
 
 func main() {
+	type Address struct {
+		City, State string
+	}
+	type Person struct {
+		XMLName   xml.Name `xml:"person"`
+		Id        int      `xml:"id,attr"`
+		FirstName string   `xml:"name>first"`
+		LastName  string   `xml:"name>last"`
+		Age       int      `xml:"age"`
+		Height    float32  `xml:"height,omitempty"`
+		Married   bool
+		Address
+		Comment string `xml:",comment"`
+	}
+
+	v := &Person{Id: 13, FirstName: "John", LastName: "Doe", Age: 42}
+	v.Comment = " Need more details. "
+	v.Address = Address{"Hanga Roa", "Easter Island"}
+
+	//enc := xml.NewEncoder(os.Stdout)
+        enc := NewSnoopy()
+	enc.Indent("  ", "    ")
+	if err := enc.Encode(v); err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+
+
   connectInfo := Pro5ConnectInfo{}
 
   var listenPort = flag.Int("port", 3000, "The port that this server listens on.")
@@ -155,27 +183,101 @@ func (c *Pro5Connection) ReadEverything() {
       switch se.Name.Local {
       case "DisplayLayouts":
         c.DisplayLayouts, err = readXmlString(xmlReader, DisplayLayouts{}, &se)
+        if err != nil {
+          log.Fatal(err)
+        } else {
+          fmt.Println(c.DisplayLayouts)
+        }
         sendToListeners(c, c.DisplayLayouts)
       case "StageDisplayData":
         c.LastSlide, err = readXmlString(xmlReader, StageDisplayData{}, &se)
+        if err != nil {
+          log.Fatal(err)
+        } else {
+          fmt.Println(c.LastSlide)
+        }
         sendToListeners(c, c.LastSlide)
       }
     }
   }
 }
 
+type Snoopy struct {
+  Buffer *bytes.Buffer
+  Xml *xml.Encoder
+}
+func NewSnoopy() *Snoopy {
+  var snoopy = new(Snoopy)
+  snoopy.Buffer = new(bytes.Buffer)
+  snoopy.Xml = xml.NewEncoder(snoopy)
+  snoopy.Xml.Indent("  ", "    ")
+  return snoopy
+}
+func (snoopy *Snoopy) Write(b []byte) (int, error) {
+  fmt.Printf("WRITE %d %v\n", len(b), b)
+  return snoopy.Buffer.Write(b)
+}
+func (snoopy *Snoopy) EncodeToken(token xml.Token) error {
+  fmt.Printf("ENCODE %T%v\n", token, token)
+  return snoopy.Xml.EncodeToken(token)
+}
+func (snoopy *Snoopy) Encode(v interface{}) error {
+  fmt.Printf("ENCODE %T%v\n", v, v)
+  return snoopy.Xml.Encode(v)
+}
+func (snoopy *Snoopy) Indent(prefix, indent string) {
+  fmt.Printf("INDENT\n")
+  snoopy.Xml.Indent(prefix, indent)
+}
+func (snoopy *Snoopy) String() string {
+  snoopy.Xml.Flush()
+  var result = snoopy.Buffer.String()
+  fmt.Printf("STRING %s\n", result)
+  return result
+}
+
 func readXmlString(xmlReader *xml.Decoder, v interface{}, startElement *xml.StartElement) (string, error) {
-  var err = xmlReader.DecodeElement(v, startElement)
-  fmt.Printf("xmlread: %T\n", v)
+  var err error
+
+  var buffer bytes.Buffer
+  var xmlWriter = xml.NewEncoder(&buffer)
+
+  //var xmlWriter = NewSnoopy()
+  //var buffer = xmlWriter
+
+  err = xmlWriter.EncodeToken(*startElement)
   if err != nil {
     return "", err
   }
-  var buffer = new(bytes.Buffer)
-  var xmlWriter = xml.NewEncoder(buffer)
-  err = xmlWriter.Encode(v)
-  if err != nil {
-    return "", err
+  //var exampleStart xml.StartElement
+  //var exampleEnd xml.EndElement
+  //exampleStart.Name.Local = "Example"
+  //exampleEnd.Name.Local = "Example"
+  //err = xmlWriter.EncodeToken(exampleStart)
+  //if err != nil {
+  //  return "", err
+  //}
+  //err = xmlWriter.EncodeToken(exampleEnd)
+  //if err != nil {
+  //  return "", err
+  //}
+  for depth := 1; depth > 0; {
+    var token, err = xmlReader.Token()
+    if err != nil {
+      return "", err
+    }
+    switch token.(type) {
+    case xml.StartElement:
+      depth = depth + 1
+    case xml.EndElement:
+      depth = depth - 1
+    }
+    err = xmlWriter.EncodeToken(token)
+    if err != nil {
+      return "", err
+    }
   }
+  xmlWriter.Flush()
   return buffer.String(), nil
 }
 
