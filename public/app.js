@@ -21,7 +21,7 @@ $(function() {
     var docType = xml.nodeName;
     var handler = handlers[docType];
     if (handler) {
-      new handler(xml);
+      handler(xml);
     } else {
       console.log("unknown element type");
       setMessage("unknown message");
@@ -33,16 +33,25 @@ $(function() {
     setMessage("layout");
     window.d = xml;
 
+    var layoutPicker = $(".js-layouts").empty();
     var layouts = {};
+    var arrange = function(layout) {
+      layout.arrange($("#stage-container"));
+      if (window.lastSlide) {
+        handlers.StageDisplayData(window.lastSlide);
+      }
+    };
     eachChildElement(xml, function(layoutNode) {
       var layout = new Layout(layoutNode);
       layouts[layout.name] = layout;
+      var layoutButton = $("<li></li>").text(layout.name).click(function() { arrange(layout) });
+      layoutPicker.append(layoutButton);
     });
-    layouts[xml.getAttribute("selected")].arrange($("#stage-container"));
+    arrange(layouts[xml.getAttribute("selected")]);
   };
   handlers.StageDisplayData = function(xml) {
     setMessage("slide");
-    window.s = xml;
+    window.lastSlide = xml;
 
     var fields = xml.firstElementChild;
     eachChildElement(fields, function(field) {
