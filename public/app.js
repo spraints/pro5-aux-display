@@ -36,6 +36,8 @@ $(function() {
     var layoutPicker = $(".js-layouts").empty();
     var layouts = {};
     var arrange = function(layout) {
+      layoutPicker.find("li").removeClass("selected");
+      layout.button.addClass("selected");
       layout.arrange($("#stage-container"));
       if (window.lastSlide) {
         handlers.StageDisplayData(window.lastSlide);
@@ -44,8 +46,8 @@ $(function() {
     eachChildElement(xml, function(layoutNode) {
       var layout = new Layout(layoutNode);
       layouts[layout.name] = layout;
-      var layoutButton = $("<li></li>").text(layout.name).click(function() { arrange(layout) });
-      layoutPicker.append(layoutButton);
+      layout.button = $("<li></li>").addClass("layout-button").text(layout.name).click(function() { arrange(layout) });
+      layoutPicker.append(layout.button);
     });
     arrange(layouts[xml.getAttribute("selected")]);
   };

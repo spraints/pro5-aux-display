@@ -1,3 +1,10 @@
 .connected {
   background-color: #cfc;
 }
+
+.layout-button {
+  cursor: pointer;
+}
+.layout-button.selected {
+  font-weight: bold;
+}
