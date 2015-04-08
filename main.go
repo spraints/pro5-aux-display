@@ -208,6 +208,9 @@ func (c *Pro5Connection) AddListener(listener io.Writer) {
   c.Listeners.PushBack(listener)
   sendToListener(c, listener, c.DisplayLayouts)
   sendToListener(c, listener, c.LastSlide)
+  for {
+    time.Sleep(1 * time.Minute)
+  }
 }
 
 func sendToListeners(c *Pro5Connection, payload string) (err error) {
