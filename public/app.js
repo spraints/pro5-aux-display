@@ -76,7 +76,6 @@ $(function() {
   };
 
   handlers.StageDisplayData = function(xml) {
-    setMessage("slide");
     window.lastSlide = xml;
 
     var fields = xml.firstElementChild;
@@ -154,33 +153,11 @@ $(function() {
 
   setInterval(function() {
     var now = new Date();
-    var hour = now.getHours();
-    var half = "AM";
-    if (hour == 0) {
-      hour = 12;
-    } else if (hour == 12) {
-      half = "PM";
-    } else if (hour > 12) {
-      hour = hour - 12;
-      half = "PM";
-    }
-    var minute = now.getMinutes();
-    var second = now.getSeconds();
-
-    var timeStr = "";
-    timeStr += hour;
-    timeStr += ":";
-    if (minute < 10) timeStr += "0";
-    timeStr += minute;
-    timeStr += ":";
-    if (second < 10) timeStr += "0";
-    timeStr += second;
-    timeStr += " ";
-    timeStr += half;
-
+    var timeStr = now.toString("T");
     $(".js-clock").text(timeStr);
   }, 1000);
 });
+
 // <DisplayLayouts selected="Default">
 //   <DisplayLayout showBorder="1E0" width="1680" identifier="Default" height="1050">
 //     <Frame height="105.000000" width="336.000000" xAxis="84.000000" isVisible="YES" identifier="Clock" yAxis="0.000000"/>
