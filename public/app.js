@@ -83,11 +83,22 @@ $(function() {
       var frame = $("." + classForField(field));
       frame.text($(field).text());
       frame.addClass("js-type-" + field.getAttribute("type"));
-      frame.data("running", field.getAttribute("running") == "1" ? "yes" : "no");
+      var fn = handlers.StageDisplayData[field.getAttribute("type")];
+      if (fn) { fn(frame, field); }
     });
 
     console.log("New slide");
     console.log(xml);
+  };
+
+  handlers.StageDisplayData.countdown = function(frame, field) {
+    var running = field.getAttribute("running");
+    if (running == "1") {
+      frame.data("running", "yes");
+      frame.data("endTime", moment().add(moment.duration($(field).text())));
+    } else {
+      frame.data("running", "no");
+    }
   };
 
   function eachChildElement(xml, fn) {
