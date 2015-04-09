@@ -85,6 +85,11 @@ $(function() {
       frame.addClass("js-type-" + field.getAttribute("type"));
       var fn = handlers.StageDisplayData[field.getAttribute("type")];
       if (fn) { fn(frame, field); }
+
+      var labelText = field.getAttribute("label");
+      if (labelText) {
+        $("." + labelClassForField(field)).text(labelText);
+      }
     });
 
     console.log("New slide");
@@ -131,7 +136,7 @@ $(function() {
       block.css("top", coord(node, "yAxis"));
       block.css("left", coord(node, "xAxis"));
       block.text(identifier);
-      var label = $("<div></div>").text(identifier).addClass("item-label");
+      var label = $("<div></div>").text(identifier).addClass("item-label").addClass(labelClassForField(node));
       var content = $("<div></div>").addClass("item-content").addClass(classForField(node));
       var fontSize = node.getAttribute("fontSize");
       if (fontSize) {
@@ -154,6 +159,10 @@ $(function() {
     }
 
     return this;
+  }
+
+  function labelClassForField(node) {
+    return "js-label-" + node.getAttribute("identifier");
   }
 
   function classForField(node) {
