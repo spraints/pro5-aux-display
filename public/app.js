@@ -29,6 +29,7 @@ $(function() {
   };
 
   var handlers = {};
+
   handlers.DisplayLayouts = function(xml) {
     setMessage("layout");
     window.d = xml;
@@ -51,13 +52,19 @@ $(function() {
     });
     arrange(layouts[xml.getAttribute("selected")]);
   };
+
   handlers.StageDisplayData = function(xml) {
     setMessage("slide");
     window.lastSlide = xml;
 
     var fields = xml.firstElementChild;
     eachChildElement(fields, function(field) {
-      $("." + classForField(field)).text($(field).text());
+      var frame = $("." + classForField(field));
+      frame.text($(field).text());
+      var fieldType = field.getAttribute("type");
+      if (fieldType == "clock") {
+        frame.addClass("js-clock");
+      }
     });
 
     console.log("New slide");
@@ -122,6 +129,36 @@ $(function() {
   function classForField(node) {
     return "js-layout-" + node.getAttribute("identifier");
   }
+
+  setInterval(function() {
+    var now = new Date();
+    var hour = now.getHours();
+    var half = "AM";
+    if (hour == 0) {
+      hour = 12;
+    } else if (hour == 12) {
+      half = "PM";
+    } else if (hour > 12) {
+      hour = hour - 12;
+      half = "PM";
+    }
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+
+    var timeStr = "";
+    if (hour < 10) timeStr += "0";
+    timeStr += hour;
+    timeStr += ":";
+    if (minute < 10) timeStr += "0";
+    timeStr += minute;
+    timeStr += ":";
+    if (second < 10) timeStr += "0";
+    timeStr += second;
+    timeStr += " ";
+    timeStr += half;
+
+    $(".js-clock").text(timeStr);
+  }, 1000);
 });
 // <DisplayLayouts selected="Default">
 //   <DisplayLayout showBorder="1E0" width="1680" identifier="Default" height="1050">
