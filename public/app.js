@@ -152,9 +152,7 @@ $(function() {
   }
 
   setInterval(function() {
-    var now = new Date();
-    var timeStr = now.toString("T");
-    $(".js-clock").text(timeStr);
+    $(".js-clock").text(moment().format("H:mm:ss A"));
   }, 1000);
 });
 
