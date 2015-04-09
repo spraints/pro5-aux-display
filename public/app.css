@@ -8,3 +8,27 @@
 .layout-button.selected {
   font-weight: bold;
 }
+
+.display-frame {
+  position: relative;
+  border: solid 1px black;
+}
+.item-frame {
+  position: absolute;
+  border: solid 1px black;
+}
+.item-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: black;
+  color: white;
+  font-weight: bold;
+}
+.item-content {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}

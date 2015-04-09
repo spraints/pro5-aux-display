@@ -81,9 +81,7 @@ $(function() {
     //var totalHeight = xml.getAttribute("height");
 
     function build() {
-      var main = buildBlock(xml);
-      main.addClass("display-frame");
-      main.css("position", "relative");
+      var main = buildBlock(xml, "display-frame");
       eachChildElement(xml, function(frame) {
         main.append(buildFrame(frame));
       });
@@ -91,15 +89,13 @@ $(function() {
     };
 
     function buildFrame(node) {
-      var block = buildBlock(node);
+      var block = buildBlock(node, "item-frame");
       var identifier = node.getAttribute("identifier");
-      block.css("position", "absolute");
       block.css("top", coord(node, "yAxis"));
       block.css("left", coord(node, "xAxis"));
       block.text(identifier);
-      var label = $("<div></div>").text(identifier).css("position", "absolute").css("top", 0).css("left", 0).css("background-color", "black").css("color", "white").css("font-weight", "bold");
-      var content = $("<div></div>").css("position", "absolute").css("top", 0).css("bottom", 0).css("left", 0).css("right", 0);
-      content.addClass(classForField(node));
+      var label = $("<div></div>").text(identifier).addClass("item-label");
+      var content = $("<div></div>").addClass("item-content").addClass(classForField(node));
       var fontSize = node.getAttribute("fontSize");
       if (fontSize) {
         content.css("font-size", parseInt(fontSize));
@@ -108,11 +104,11 @@ $(function() {
       return block;
     }
 
-    function buildBlock(node) {
+    function buildBlock(node, className) {
       var e = $("<div></div>");
+      e.addClass(className);
       e.width(coord(node, "width"));
       e.height(coord(node, "height"));
-      e.css("border", "solid 1px black");
       return e;
     }
 
