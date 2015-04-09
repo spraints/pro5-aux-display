@@ -163,6 +163,17 @@ $(function() {
   setInterval(function() {
     $(".js-type-clock").text(moment().format("H:mm:ss A"));
   }, 1000);
+
+  setInterval(function() {
+    $(".js-type-countdown").each(function() {
+      var $this = $(this);
+      if ($this.data("running") == "yes") {
+        var now = moment();
+        var then = moment($this.data("endTime"));
+        $this.text(then.subtract(now).format("HH:mm:ss"));
+      }
+    });
+  }, 1000);
 });
 
 // <DisplayLayouts selected="Default">
