@@ -3,20 +3,50 @@ $(function() {
     $("#message").text(message);
   }
 
-  var ws = new WebSocket("ws://" + location.host + "/connect");
-  ws.onopen = function() {
-    console.log("OPEN");
-    $("body").addClass("connected");
-    setMessage("connecting...");
-  };
-  ws.onclose = function() {
-    console.log("CLOSE");
-    $("body").removeClass("connected");
-    setMessage("closed.");
-  };
-  ws.onmessage = function(event) {
-    console.log(event);
+  function WsConnection() {
+    var conn = this;
+    var ws;
 
+    function connectNow() {
+      try {
+        console.log("connecting...");
+        ws = new WebSocket("ws://" + location.host + "/connect");
+
+        ws.onopen = function() {
+          $("body").addClass("connected");
+          console.log("connected");
+        }
+
+        ws.onclose = function() {
+          $("body").removeClass("connected");
+          console.log("websocket closed");
+          connectLater();
+        }
+
+        ws.onmessage = function(event) {
+          if (conn.onmessage) {
+            conn.onmessage(event);
+          }
+        }
+      } catch(e) {
+        connectLater();
+        console.error(e);
+      }
+    };
+
+    function connectLater() {
+      console.log("reconnecting in 5s...");
+      setTimeout(connectNow, 5000);
+    }
+
+    connectNow();
+
+    return conn;
+  }
+
+  var conn = new WsConnection();
+
+  conn.onmessage = function(event) {
     var xml = $.parseXML(event.data).firstChild;
     var docType = xml.nodeName;
     var handler = handlers[docType];
