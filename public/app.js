@@ -168,7 +168,6 @@ $(function() {
     var second = now.getSeconds();
 
     var timeStr = "";
-    if (hour < 10) timeStr += "0";
     timeStr += hour;
     timeStr += ":";
     if (minute < 10) timeStr += "0";
