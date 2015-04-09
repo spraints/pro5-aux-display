@@ -1,8 +1,4 @@
 $(function() {
-  function setMessage(message) {
-    $("#message").text(message);
-  }
-
   function WsConnection() {
     var conn = this;
     var ws;
@@ -54,16 +50,12 @@ $(function() {
       handler(xml);
     } else {
       console.log("unknown element type");
-      setMessage("unknown message");
     }
   };
 
   var handlers = {};
 
   handlers.DisplayLayouts = function(xml) {
-    setMessage("layout");
-    window.d = xml;
-
     var layoutPicker = $(".js-layouts").empty();
     var layouts = {};
     var arrange = function(layout) {
