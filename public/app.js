@@ -82,10 +82,8 @@ $(function() {
     eachChildElement(fields, function(field) {
       var frame = $("." + classForField(field));
       frame.text($(field).text());
-      var fieldType = field.getAttribute("type");
-      if (fieldType == "clock") {
-        frame.addClass("js-clock");
-      }
+      frame.addClass("js-type-" + field.getAttribute("type"));
+      frame.data("running", field.getAttribute("running") == "1" ? "yes" : "no");
     });
 
     console.log("New slide");
@@ -152,7 +150,7 @@ $(function() {
   }
 
   setInterval(function() {
-    $(".js-clock").text(moment().format("H:mm:ss A"));
+    $(".js-type-clock").text(moment().format("H:mm:ss A"));
   }, 1000);
 });
 
