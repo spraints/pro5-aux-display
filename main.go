@@ -22,7 +22,7 @@ func main() {
   done := make(chan bool)
   state := pro5state.New()
   go notifyWhenDone(func() { pro5stage.Run(connectInfo, state) }, done)
-  go notifyWhenDone(func() { pro5web.StartServer(serverInfo, state) }, done)
+  go notifyWhenDone(func() { pro5web.StartServer(serverInfo, state.ListenForClients()) }, done)
   <-done
 }
 

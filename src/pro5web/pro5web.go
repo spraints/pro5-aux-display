@@ -12,22 +12,20 @@ type WebServerInfo struct {
   Port int
 }
 
-type MessageStream interface {
-  Tap(messages chan<- string)
-}
+type NewChannels chan<- (chan<- string)
 
-func StartServer(info WebServerInfo, stream MessageStream) {
+func StartServer(info WebServerInfo, messageChannels NewChannels) {
   var mux = http.NewServeMux()
-  mux.Handle("/connect", serveWebSockets(stream))
+  mux.Handle("/connect", serveWebSockets(messageChannels))
   mux.Handle("/", http.FileServer(http.Dir("public/")))
   http.ListenAndServe(fmt.Sprintf(":%d", info.Port), mux)
   // This never returns.
 }
 
-func serveWebSockets(stream MessageStream) websocket.Handler {
+func serveWebSockets(messageChannels NewChannels) websocket.Handler {
   return func(ws *websocket.Conn) {
     messages := make(chan string, 5)
-    stream.Tap(messages)
+    messageChannels <- messages
     for message := range messages {
       fmt.Fprintf(ws, "%s", message)
     }

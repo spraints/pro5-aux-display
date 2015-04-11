@@ -14,11 +14,17 @@ func New() *State {
   return new(State)
 }
 
-// Implement pro5web.MessageStream
-func (s *State) Tap(listener chan<- string) {
-  s.Listeners.PushBack(listener)
-  sendToListener(s, listener, s.DisplayLayouts)
-  sendToListener(s, listener, s.LastSlide)
+// Listen for new websocket clients (channels that receive a single payload).
+func (s *State) ListenForClients() (chan<- (chan<- string)) {
+  acceptor := make(chan (chan<- string))
+  go func() {
+    for listener := range acceptor {
+      s.Listeners.PushBack(listener)
+      sendToListener(s, listener, s.DisplayLayouts)
+      sendToListener(s, listener, s.LastSlide)
+    }
+  }()
+  return acceptor
 }
 
 // Implement pro5stage.Client
