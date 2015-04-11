@@ -14,8 +14,8 @@ func New() *State {
   return new(State)
 }
 
-// Implement pro5web.ClientProtocol
-func (s *State) SendMessages(listener chan<- string) {
+// Implement pro5web.MessageStream
+func (s *State) Tap(listener chan<- string) {
   s.Listeners.PushBack(listener)
   sendToListener(s, listener, s.DisplayLayouts)
   sendToListener(s, listener, s.LastSlide)
