@@ -13,7 +13,7 @@ type WebServerInfo struct {
 }
 
 type ClientProtocol interface {
-  SendMessages(messages chan string)
+  SendMessages(messages chan<- string)
 }
 
 func StartServer(info WebServerInfo, clientProto ClientProtocol) {

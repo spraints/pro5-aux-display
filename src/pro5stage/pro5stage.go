@@ -106,7 +106,7 @@ func readXmlString(xmlReader *xml.Decoder, startElement *xml.StartElement) (stri
   return buffer.String(), nil
 }
 
-func (c *Conn) SendMessages(listener chan string) {
+func (c *Conn) SendMessages(listener chan<- string) {
   c.Listeners.PushBack(listener)
   sendToListener(c, listener, c.DisplayLayouts)
   sendToListener(c, listener, c.LastSlide)
@@ -114,7 +114,7 @@ func (c *Conn) SendMessages(listener chan string) {
 
 func sendToListeners(c *Conn, payload string) (err error) {
   for e := c.Listeners.Front(); e != nil; e = e.Next() {
-    listener, ok := e.Value.(chan string)
+    listener, ok := e.Value.(chan<- string)
     if ok {
       err = sendToListener(c, listener, payload)
       if err != nil {
@@ -125,7 +125,7 @@ func sendToListeners(c *Conn, payload string) (err error) {
   return
 }
 
-func sendToListener(c *Conn, listener chan string, payload string) error {
+func sendToListener(c *Conn, listener chan<- string, payload string) error {
   if len(payload) > 0 {
     listener <- payload
   }
