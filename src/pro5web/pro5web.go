@@ -18,14 +18,18 @@ type ClientProtocol interface {
 
 func StartServer(info WebServerInfo, clientProto ClientProtocol) {
   var mux = http.NewServeMux()
-  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn) {
+  mux.Handle("/connect", serveWebSockets(clientProto))
+  mux.Handle("/", http.FileServer(http.Dir("public/")))
+  http.ListenAndServe(fmt.Sprintf(":%d", info.Port), mux)
+  // This never returns.
+}
+
+func serveWebSockets(clientProto ClientProtocol) websocket.Handler {
+  return func(ws *websocket.Conn) {
     messages := make(chan string, 5)
     clientProto.SendMessages(messages)
     for message := range messages {
       fmt.Fprintf(ws, "%s", message)
     }
-  }))
-  mux.Handle("/", http.FileServer(http.Dir("public/")))
-  http.ListenAndServe(fmt.Sprintf(":%d", info.Port), mux)
-  // This never returns.
+  }
 }
