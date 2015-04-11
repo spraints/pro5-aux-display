@@ -22,13 +22,14 @@ func (s *State) SendMessages(listener chan<- string) {
 }
 
 // Implement pro5stage.Client
-func (s *State) SetDisplayLayout(xml string) {
-  s.DisplayLayouts = xml
-  sendToListeners(s, xml)
-}
-func (s *State) UpdateSlide(xml string) {
-  s.LastSlide = xml
-  sendToListeners(s, xml)
+func (s *State) SendMessage(name string, payload string) {
+  switch name {
+  case "DisplayLayouts":
+    s.DisplayLayouts = payload
+  case "StageDisplayData":
+    s.LastSlide = payload
+  }
+  sendToListeners(s, payload)
 }
 
 func sendToListeners(s *State, payload string) (err error) {

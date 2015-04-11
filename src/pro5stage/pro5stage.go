@@ -22,8 +22,7 @@ type Conn struct {
 }
 
 type Client interface {
-  SetDisplayLayout(xml string)
-  UpdateSlide(xml string)
+  SendMessage(name string, payload string)
 }
 
 func ConnectToPro5(info ConnectInfo) (*Conn, error) {
@@ -57,20 +56,11 @@ func (c *Conn) ReadEverything(client Client) {
     }
     switch se := token.(type) {
     case xml.StartElement:
-      switch se.Name.Local {
-      case "DisplayLayouts":
-        xml, err := readXmlString(xmlReader, &se)
-        if err != nil {
-          log.Fatal(err)
-        }
-        client.SetDisplayLayout(xml)
-      case "StageDisplayData":
-        xml, err := readXmlString(xmlReader, &se)
-        if err != nil {
-          log.Fatal(err)
-        }
-        client.UpdateSlide(xml)
+      xml, err := readXmlString(xmlReader, &se)
+      if err != nil {
+        log.Fatal(err)
       }
+      client.SendMessage(se.Name.Local, xml)
     }
   }
 }
