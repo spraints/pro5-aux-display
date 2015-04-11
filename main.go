@@ -19,7 +19,14 @@ func main() {
 
   flag.Parse()
 
+  done := make(chan bool)
   state := pro5state.New()
-  go pro5stage.Run(connectInfo, state)
-  pro5web.StartServer(serverInfo, state)
+  go notifyWhenDone(func() { pro5stage.Run(connectInfo, state) }, done)
+  go notifyWhenDone(func() { pro5web.StartServer(serverInfo, state) }, done)
+  <-done
+}
+
+func notifyWhenDone(fn func(), done chan<- bool) {
+  fn()
+  done <- true
 }

@@ -31,6 +31,7 @@ func Run(connectInfo ConnectInfo, client Client) {
     log.Fatal("ConnectToPro5: ", err)
   }
   pro5.ReadEverything(client)
+  // This never returns.
 }
 
 func ConnectToPro5(info ConnectInfo) (*Conn, error) {
