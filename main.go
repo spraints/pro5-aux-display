@@ -1,17 +1,10 @@
 package main
 
 import (
-//  "bytes"
-//  "container/list"
-//  "encoding/xml"
   "flag"
-//  "fmt"
-//  "io"
   "log"
-//  "net"
-//  "net/http"
-//  "time"
-//
+
+  "pro5state"
   "pro5stage"
   "pro5web"
 )
@@ -31,5 +24,7 @@ func main() {
   if err != nil {
     log.Fatal("ConnectToPro5: ", err)
   }
-  pro5web.StartServer(serverInfo, pro5)
+  state := pro5state.New()
+  go pro5.ReadEverything(state)
+  pro5web.StartServer(serverInfo, state)
 }

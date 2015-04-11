@@ -2,7 +2,6 @@ package pro5stage
 
 import (
   "bytes"
-  "container/list"
   "encoding/xml"
   "fmt"
   "log"
@@ -20,9 +19,11 @@ type ConnectInfo struct {
 type Conn struct {
   Info ConnectInfo
   Connection net.Conn
-  Listeners list.List
-  DisplayLayouts string
-  LastSlide string
+}
+
+type Client interface {
+  SetDisplayLayout(xml string)
+  UpdateSlide(xml string)
 }
 
 func ConnectToPro5(info ConnectInfo) (*Conn, error) {
@@ -33,21 +34,19 @@ func ConnectToPro5(info ConnectInfo) (*Conn, error) {
   if err != nil {
     return nil, err
   }
-  go result.Run()
+  connect(result)
   return result, nil
 }
 
-func (c *Conn) Run() {
+func connect(c *Conn) {
   var xmlWriter = xml.NewEncoder(c.Connection)
   var loginElement = xml.StartElement{}
   loginElement.Name.Local = "StageDisplayLogin"
   xmlWriter.EncodeElement(c.Info.Password, loginElement)
   fmt.Fprintf(c.Connection, "\r\n")
-
-  c.ReadEverything()
 }
 
-func (c *Conn) ReadEverything() {
+func (c *Conn) ReadEverything(client Client) {
   var xmlReader = xml.NewDecoder(c.Connection)
 
   // http://blog.davidsingleton.org/parsing-huge-xml-files-with-go/
@@ -60,17 +59,17 @@ func (c *Conn) ReadEverything() {
     case xml.StartElement:
       switch se.Name.Local {
       case "DisplayLayouts":
-        c.DisplayLayouts, err = readXmlString(xmlReader, &se)
+        xml, err := readXmlString(xmlReader, &se)
         if err != nil {
           log.Fatal(err)
         }
-        sendToListeners(c, c.DisplayLayouts)
+        client.SetDisplayLayout(xml)
       case "StageDisplayData":
-        c.LastSlide, err = readXmlString(xmlReader, &se)
+        xml, err := readXmlString(xmlReader, &se)
         if err != nil {
           log.Fatal(err)
         }
-        sendToListeners(c, c.LastSlide)
+        client.UpdateSlide(xml)
       }
     }
   }
@@ -104,30 +103,4 @@ func readXmlString(xmlReader *xml.Decoder, startElement *xml.StartElement) (stri
   }
   xmlWriter.Flush()
   return buffer.String(), nil
-}
-
-func (c *Conn) SendMessages(listener chan<- string) {
-  c.Listeners.PushBack(listener)
-  sendToListener(c, listener, c.DisplayLayouts)
-  sendToListener(c, listener, c.LastSlide)
-}
-
-func sendToListeners(c *Conn, payload string) (err error) {
-  for e := c.Listeners.Front(); e != nil; e = e.Next() {
-    listener, ok := e.Value.(chan<- string)
-    if ok {
-      err = sendToListener(c, listener, payload)
-      if err != nil {
-        return
-      }
-    }
-  }
-  return
-}
-
-func sendToListener(c *Conn, listener chan<- string, payload string) error {
-  if len(payload) > 0 {
-    listener <- payload
-  }
-  return nil
 }
