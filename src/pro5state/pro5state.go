@@ -5,9 +5,9 @@ import (
 )
 
 type State struct {
-  Listeners list.List
-  DisplayLayouts string
-  LastSlide string
+  listeners list.List
+  displayLayouts string
+  lastSlide string
 }
 
 func New() *State {
@@ -19,9 +19,9 @@ func (s *State) ListenForClients() (chan<- (chan<- string)) {
   acceptor := make(chan (chan<- string))
   go func() {
     for listener := range acceptor {
-      s.Listeners.PushBack(listener)
-      sendToListener(s, listener, s.DisplayLayouts)
-      sendToListener(s, listener, s.LastSlide)
+      s.listeners.PushBack(listener)
+      sendToListener(s, listener, s.displayLayouts)
+      sendToListener(s, listener, s.lastSlide)
     }
   }()
   return acceptor
@@ -31,15 +31,15 @@ func (s *State) ListenForClients() (chan<- (chan<- string)) {
 func (s *State) SendMessage(name string, payload string) {
   switch name {
   case "DisplayLayouts":
-    s.DisplayLayouts = payload
+    s.displayLayouts = payload
   case "StageDisplayData":
-    s.LastSlide = payload
+    s.lastSlide = payload
   }
   sendToListeners(s, payload)
 }
 
 func sendToListeners(s *State, payload string) (err error) {
-  for e := s.Listeners.Front(); e != nil; e = e.Next() {
+  for e := s.listeners.Front(); e != nil; e = e.Next() {
     listener, ok := e.Value.(chan<- string)
     if ok {
       err = sendToListener(s, listener, payload)
