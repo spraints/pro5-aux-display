@@ -5,8 +5,6 @@ import (
   "net/http"
 
   "golang.org/x/net/websocket"
-
-  "pro5stage"
 )
 
 // Arguments for serving the web front end.
@@ -14,9 +12,20 @@ type WebServerInfo struct {
   Port int
 }
 
-func StartServer(info WebServerInfo, pro5 *pro5stage.Conn) {
+type ClientProtocol interface {
+  SendMessages(messages chan string)
+}
+
+func StartServer(info WebServerInfo, clientProto ClientProtocol) {
   var mux = http.NewServeMux()
-  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn) { pro5.AddListener(ws) }))
+  mux.Handle("/connect", websocket.Handler(func(ws *websocket.Conn) {
+    messages := make(chan string, 5)
+    clientProto.SendMessages(messages)
+    for message := range messages {
+      fmt.Fprintf(ws, "%s", message)
+    }
+  }))
   mux.Handle("/", http.FileServer(http.Dir("public/")))
   http.ListenAndServe(fmt.Sprintf(":%d", info.Port), mux)
+  // This never returns.
 }

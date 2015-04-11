@@ -5,10 +5,8 @@ import (
   "container/list"
   "encoding/xml"
   "fmt"
-  "io"
   "log"
   "net"
-  "time"
 )
 
 // Arguments for connecting to ProPresenter.
@@ -108,18 +106,15 @@ func readXmlString(xmlReader *xml.Decoder, startElement *xml.StartElement) (stri
   return buffer.String(), nil
 }
 
-func (c *Conn) AddListener(listener io.Writer) {
+func (c *Conn) SendMessages(listener chan string) {
   c.Listeners.PushBack(listener)
   sendToListener(c, listener, c.DisplayLayouts)
   sendToListener(c, listener, c.LastSlide)
-  for {
-    time.Sleep(1 * time.Minute)
-  }
 }
 
 func sendToListeners(c *Conn, payload string) (err error) {
   for e := c.Listeners.Front(); e != nil; e = e.Next() {
-    listener, ok := e.Value.(io.Writer)
+    listener, ok := e.Value.(chan string)
     if ok {
       err = sendToListener(c, listener, payload)
       if err != nil {
@@ -130,12 +125,9 @@ func sendToListeners(c *Conn, payload string) (err error) {
   return
 }
 
-func sendToListener(c *Conn, listener io.Writer, payload string) error {
+func sendToListener(c *Conn, listener chan string, payload string) error {
   if len(payload) > 0 {
-    _, err := fmt.Fprintf(listener, "%s", payload)
-    if err != nil {
-      return err
-    }
+    listener <- payload
   }
   return nil
 }
