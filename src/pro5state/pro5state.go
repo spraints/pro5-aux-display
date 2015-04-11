@@ -2,6 +2,8 @@ package pro5state
 
 import (
   "container/list"
+
+  "pro5"
 )
 
 type State struct {
@@ -27,15 +29,21 @@ func (s *State) ListenForClients() (chan<- (chan<- string)) {
   return acceptor
 }
 
-// Implement pro5stage.Client
-func (s *State) SendMessage(name string, payload string) {
-  switch name {
-  case "DisplayLayouts":
-    s.displayLayouts = payload
-  case "StageDisplayData":
-    s.lastSlide = payload
-  }
-  sendToListeners(s, payload)
+// Listen for new messages from pro5.
+func (s *State) ListenForMessages() (chan<- pro5.StageMessage) {
+  messages := make(chan pro5.StageMessage)
+  go func() {
+    for message := range messages {
+      switch message.Name {
+      case "DisplayLayouts":
+        s.displayLayouts = message.Payload
+      case "StageDisplayData":
+        s.lastSlide = message.Payload
+      }
+      sendToListeners(s, message.Payload)
+    }
+  }()
+  return messages
 }
 
 func sendToListeners(s *State, payload string) (err error) {

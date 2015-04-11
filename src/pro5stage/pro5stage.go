@@ -6,6 +6,8 @@ import (
   "fmt"
   "log"
   "net"
+
+  "pro5"
 )
 
 // Arguments for connecting to ProPresenter.
@@ -21,9 +23,7 @@ type Conn struct {
   Connection net.Conn
 }
 
-type Client interface {
-  SendMessage(name string, payload string)
-}
+type Client chan<- pro5.StageMessage
 
 func Run(connectInfo ConnectInfo, client Client) {
   pro5, err := ConnectToPro5(connectInfo)
@@ -69,7 +69,7 @@ func (c *Conn) ReadEverything(client Client) {
       if err != nil {
         log.Fatal(err)
       }
-      client.SendMessage(se.Name.Local, xml)
+      client <- pro5.StageMessage{se.Name.Local, xml}
     }
   }
 }
