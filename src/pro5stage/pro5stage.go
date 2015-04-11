@@ -25,6 +25,14 @@ type Client interface {
   SendMessage(name string, payload string)
 }
 
+func Run(connectInfo ConnectInfo, client Client) {
+  pro5, err := ConnectToPro5(connectInfo)
+  if err != nil {
+    log.Fatal("ConnectToPro5: ", err)
+  }
+  pro5.ReadEverything(client)
+}
+
 func ConnectToPro5(info ConnectInfo) (*Conn, error) {
   var result = new(Conn)
   var err error

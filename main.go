@@ -2,7 +2,6 @@ package main
 
 import (
   "flag"
-  "log"
 
   "pro5state"
   "pro5stage"
@@ -20,11 +19,7 @@ func main() {
 
   flag.Parse()
 
-  var pro5, err = pro5stage.ConnectToPro5(connectInfo)
-  if err != nil {
-    log.Fatal("ConnectToPro5: ", err)
-  }
   state := pro5state.New()
-  go pro5.ReadEverything(state)
+  go pro5stage.Run(connectInfo, state)
   pro5web.StartServer(serverInfo, state)
 }
